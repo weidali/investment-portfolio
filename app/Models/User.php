@@ -21,6 +21,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'telegram_id',
+        'telegram_username',
+        'timezone',
+        'recommendation_threshold',
+        'notifications_enabled',
     ];
 
     /**
@@ -43,6 +48,36 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'recommendation_threshold' => 'decimal:2',
+            'notifications_enabled' => 'boolean',
+            
+            'telegram_id' => 'integer',
+            'recommendation_threshold' => 'decimal:2',
+            'notifications_enabled' => 'boolean',
         ];
+    }
+
+    public function userStocks(): HasMany
+    {
+        return $this->hasMany(UserStock::class);
+    }
+
+    public function recommendations(): HasMany
+    {
+        return $this->hasMany(Recommendation::class);
+    }
+
+    // Методы
+    public function getPortfolioValue(): float
+    {
+        return $this->userStocks()
+            ->with('stock')
+            ->get()
+            ->sum(fn($us) => $us->quantity * ($us->stock->currentPrice() ?? 0));
+    }
+
+    public static function findByTelegramId(int $telegramId): ?self
+    {
+        return self::where('telegram_id', $telegramId)->first();
     }
 }
